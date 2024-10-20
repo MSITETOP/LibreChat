@@ -1,0 +1,12 @@
+version: 1.0.8
+ 
+interface:
+  # Privacy policy settings
+  privacyPolicy:
+    externalUrl: 'https://ipgpromo.ru/privacy-policy'
+    openNewTab: true
+ 
+  # Terms of service
+  termsOfService:
+    externalUrl: 'https://ipgpromo.ru/tos'
+    openNewTab: true
