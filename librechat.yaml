@@ -7,15 +7,10 @@ version: 1.1.8
 # Cache settings: Set to true to enable caching
 cache: true
 
-helpAndFaqURL: "https://ipgpromo.ru/1"
-
 includedTools: ["calculator"]
 
 # Custom interface configuration
 interface:
   sidePanel: false
-  helpAndFaqURL: "https://ipgpromo.ru/2"
 
-startup:
-  helpAndFaqURL: "https://ipgpromo.ru/3"
 
