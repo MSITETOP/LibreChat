@@ -60,7 +60,7 @@ function AuthLayout({
       <Banner />
       <BlinkAnimation active={isFetching}>
         <div className="mt-6 h-10 w-full bg-cover">
-          <img src="//ipgpromo.ru/upload/logo.png" className="h-full w-full object-contain" alt="Logo" />
+          <img src="//d5d2sf46dn7jn3s1a6ei.apigw.yandexcloud.net/static/logoai.png" className="h-full w-full object-contain" alt="Logo" />
         </div>
       </BlinkAnimation>
       <DisplayError />
