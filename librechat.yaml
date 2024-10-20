@@ -2,7 +2,7 @@
 # https://www.librechat.ai/docs/configuration/librechat_yaml
 
 # Configuration version (required)
-version: 1.1.7
+version: 1.1.8
 
 # Cache settings: Set to true to enable caching
 cache: true
@@ -15,4 +15,7 @@ includedTools: ["calculator"]
 interface:
   sidePanel: false
   helpAndFaqURL: "https://ipgpromo.ru/2"
+
+startup:
+  helpAndFaqURL: "https://ipgpromo.ru/3"
 
