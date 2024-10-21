@@ -16,4 +16,6 @@ includedTools: ["calculator"]
 endpoints:
   assistants:
     disableBuilder: true
-    supportedIds: ["asst_nB18mkuiU34T645GttfB9Dpl"]
+    supportedIds:
+      - "asst_nB18mkuiU34T645GttfB9Dpl"
+
