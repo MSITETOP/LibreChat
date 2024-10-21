@@ -75,7 +75,7 @@ const createUser = async (data, disableTTL = true, returnUser = false) => {
 
   const user = await User.create(userData);
 
-  if (true) {
+  if (isEnabled(process.env.CHECK_BALANCE)) {
     let incrementValue = 20000;
     await Balance.findOneAndUpdate(
       { user: user._id },
