@@ -3,8 +3,6 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './style.css';
 import './mobile.css';
-import 'https://ipg.digital/upload/gpt.css';
-import 'https://ipg.digital/upload/gpt.js';
 import { ApiErrorBoundaryProvider } from './hooks/ApiErrorBoundaryContext';
 
 const container = document.getElementById('root');
