@@ -3,6 +3,7 @@ const signPayload = require('~/server/services/signPayload');
 const User = require('./User');
 const transactionSchema = require('./schema/transaction');
 const Balance = require('./Balance');
+const { isEnabled } = require('~/server/utils/handleText');
 
 /**
  * Retrieve a user by ID and convert the found user document to a plain object.
