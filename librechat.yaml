@@ -10,8 +10,8 @@ cache: true
 includedTools: ["calculator"]
 
 # Custom interface configuration
-interface:
-  sidePanel: false
+# interface:
+#   sidePanel: false
 
 endpoints:
   assistants:
