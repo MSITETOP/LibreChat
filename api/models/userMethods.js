@@ -75,8 +75,8 @@ const createUser = async (data, disableTTL = true, returnUser = false) => {
 
   const user = await User.create(userData);
 
-  if (isEnabled(process.env.CHECK_BALANCE)) {
-    let incrementValue = 20000;
+  if (isEnabled(process.env.CHECK_BALANCE) && process.env.START_BALANCE) {
+    let incrementValue = parseInt(process.env.START_BALANCE);
     await Balance.findOneAndUpdate(
       { user: user._id },
       { $inc: { tokenCredits: incrementValue } },
