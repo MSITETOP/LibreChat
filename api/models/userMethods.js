@@ -1,6 +1,8 @@
 const bcrypt = require('bcryptjs');
 const signPayload = require('~/server/services/signPayload');
 const User = require('./User');
+const transactionSchema = require('./schema/transaction');
+const Balance = require('./Balance');
 
 /**
  * Retrieve a user by ID and convert the found user document to a plain object.
@@ -71,6 +73,16 @@ const createUser = async (data, disableTTL = true, returnUser = false) => {
   }
 
   const user = await User.create(userData);
+
+  let balance = await Balance.findOne({ user: user._id }).lean();
+  let incrementValue = 50000;
+
+  await Balance.findOneAndUpdate(
+    { user: user._id },
+    { $inc: { tokenCredits: incrementValue } },
+    { upsert: true, new: true },
+  ).lean();
+
   if (returnUser) {
     return user.toObject();
   }
