@@ -13,4 +13,7 @@ includedTools: ["calculator"]
 interface:
   sidePanel: false
 
-
+endpoints:
+  assistants:
+    disableBuilder: true
+    supportedIds: ["asst_nB18mkuiU34T645GttfB9Dpl"]
