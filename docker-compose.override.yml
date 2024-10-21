@@ -6,5 +6,4 @@ services:
       - type: bind
         source: ./librechat.yaml
         target: /app/librechat.yaml
-      - ./images:/app/client/public/images
-      - ./logs:/app/api/logs 
+      - ./images:/data/images
