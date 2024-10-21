@@ -74,14 +74,14 @@ const createUser = async (data, disableTTL = true, returnUser = false) => {
 
   const user = await User.create(userData);
 
-  let balance = await Balance.findOne({ user: user._id }).lean();
-  let incrementValue = 50000;
-
-  await Balance.findOneAndUpdate(
-    { user: user._id },
-    { $inc: { tokenCredits: incrementValue } },
-    { upsert: true, new: true },
-  ).lean();
+  if (isEnabled(process.env.CHECK_BALANCE) && process.env.START_BALANCE) {
+    let incrementValue = parseInt(process.env.START_BALANCE);
+    await Balance.findOneAndUpdate(
+      { user: user._id },
+      { $inc: { tokenCredits: incrementValue } },
+      { upsert: true, new: true },
+    ).lean();
+  }
 
   if (returnUser) {
     return user.toObject();
