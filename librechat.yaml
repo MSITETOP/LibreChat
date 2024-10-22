@@ -7,7 +7,7 @@ version: 1.1.8
 # Cache settings: Set to true to enable caching
 cache: true
 
-includedTools: ["calculator"]
+includedTools: []
 fileStrategy: "firebase"
 
 # Custom interface configuration
@@ -16,7 +16,6 @@ fileStrategy: "firebase"
 
 endpoints:
   assistants:
-    disableBuilder: true
-    supportedIds:
-      - "asst_nB18mkuiU34T645GttfB9Dpl"
+    disableBuilder: false
+
 
