@@ -7,7 +7,7 @@ version: 1.1.8
 # Cache settings: Set to true to enable caching
 cache: true
 
-includedTools: []
+includedTools: ['dalle']
 fileStrategy: "firebase"
 
 # Custom interface configuration
@@ -16,6 +16,6 @@ fileStrategy: "firebase"
 
 endpoints:
   assistants:
-    disableBuilder: false
+    disableBuilder: true
 
 
