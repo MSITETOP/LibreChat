@@ -122,6 +122,24 @@
     ]
   },
   {
+    "name": "YandexArt",
+    "pluginKey": "yandexart",
+    "description": "[YandexArt] Create realistic images and art from a description in natural language",
+    "icon": "https://i.imgur.com/u2TzXzH.png",
+    "authConfig": [
+      {
+        "authField": "YANDEXART_API_KEY",
+        "label": "YandexArt API Key",
+        "description": "You can use YandexArt with your API Key."
+      },
+      {
+        "authField": "YANDEXART_FOLDER",
+        "label": "YandexArt Folder",
+        "description": "You can use YandexArt with your Folder."
+      },
+    ]
+  },
+  {
     "name": "Tavily Search",
     "pluginKey": "tavily_search_results_json",
     "description": "Tavily Search is a robust search API tailored for LLM Agents. It seamlessly integrates with diverse data sources to ensure a superior, relevant search experience.",
