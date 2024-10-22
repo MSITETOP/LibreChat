@@ -9,6 +9,7 @@ const SelfReflectionTool = require('./SelfReflection');
 
 // Structured Tools
 const DALLE3 = require('./structured/DALLE3');
+const YandexArt = require('./structured/YandexArt');
 const ChatTool = require('./structured/ChatTool');
 const E2BTools = require('./structured/E2BTools');
 const CodeSherpa = require('./structured/CodeSherpa');
@@ -30,6 +31,7 @@ module.exports = {
   StableDiffusionAPI,
   SelfReflectionTool,
   // Structured Tools
+  YandexArt,
   DALLE3,
   ChatTool,
   E2BTools,
