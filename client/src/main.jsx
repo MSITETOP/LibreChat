@@ -4,7 +4,7 @@ import App from './App';
 import './style.css';
 import './mobile.css';
 import { ApiErrorBoundaryProvider } from './hooks/ApiErrorBoundaryContext';
-if (!process.env.CUSTOM_CSS) {
+if (process.env.CUSTOM_CSS) {
 import process.env.CUSTOM_CSS;
 }
 
