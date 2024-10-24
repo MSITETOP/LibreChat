@@ -75,7 +75,7 @@ const errorMessages = {
     const message = `Insufficient Funds! Balance: ${balance}. <script data-b24-form="click/80/x9l8kw" data-skip-moving="true">(function(w,d,u){var s=d.createElement('script');s.async=true;s.src=u+'?'+(Date.now()/180000|0);var h=d.getElementsByTagName('script')[0];h.parentNode.insertBefore(s,h);})(window,document,'https://upload-portal.storage.yandexcloud.net/crm/form/loader_80_x9l8kw.js');</script>`;
     return (
       <>
-        {__html: message}
+        {{__html: message}}
         {generations && (
           <>
             <br />
