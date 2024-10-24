@@ -72,10 +72,10 @@ const errorMessages = {
   },
   token_balance: (json: TTokenBalance) => {
     const { balance, tokenCost, promptTokens, generations } = json;
-    const message = `Insufficient Funds! Balance: ${balance}.`;
+    const message = `Недостаточно средств! Баланс: ${balance}. <a href="https://ipg-ai.bitrix24site.ru/gpt/">Пополнить баланс</a>`;
     return (
       <>
-        {{__html: message}}
+        {message}
         {generations && (
           <>
             <br />
