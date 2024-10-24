@@ -77,7 +77,7 @@ const errorMessages = {
     return (
       <>
         {message}
-        {{ __html: btnjs }}
+        { __html: btnjs }
         {generations && (
           <>
             <br />
