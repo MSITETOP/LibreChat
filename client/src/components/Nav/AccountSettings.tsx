@@ -85,7 +85,7 @@ function AccountSettings() {
                 className="select-item text-sm"
               >
                 <LinkIcon aria-hidden="true" />
-                `Balance: ${parseFloat(balanceQuery.data).toFixed(2)}`
+                Balance: {parseFloat(balanceQuery.data).toFixed(2)}
               </Select.SelectItem>
               <DropdownMenuSeparator />
           </>
