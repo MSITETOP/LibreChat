@@ -1,19 +1,24 @@
 const fs = require('fs');
 const path = require('path');
 const { zodToJsonSchema } = require('zod-to-json-schema');
+const { tool: toolFn, Tool, DynamicStructuredTool } = require('@langchain/core/tools');
 const { Calculator } = require('@langchain/community/tools/calculator');
-const { tool: toolFn, Tool } = require('@langchain/core/tools');
 const {
   Tools,
+  ErrorTypes,
   ContentTypes,
   imageGenTools,
+  EModelEndpoint,
   actionDelimiter,
   ImageVisionTool,
   openapiToFunction,
+  AgentCapabilities,
   validateAndParseOpenAPISpec,
 } = require('librechat-data-provider');
 const { processFileURL, uploadImageBuffer } = require('~/server/services/Files/process');
+const { createYouTubeTools, manifestToolMap, toolkits } = require('~/app/clients/tools');
 const { loadActionSets, createActionTool, domainParser } = require('./ActionService');
+const { getEndpointsConfig } = require('~/server/services/Config');
 const { recordUsage } = require('~/server/services/Threads');
 const { loadTools } = require('~/app/clients/tools/util');
 const { redactMessage } = require('~/config/parsers');
@@ -93,9 +98,20 @@ function loadAndFormatTools({ directory, adminFilter = [], adminIncluded = [] })
   }
 
   /** Basic Tools; schema: { input: string } */
-  const basicToolInstances = [new Calculator()];
+  const basicToolInstances = [new Calculator(), ...createYouTubeTools({ override: true })];
   for (const toolInstance of basicToolInstances) {
     const formattedTool = formatToOpenAIAssistantTool(toolInstance);
+    let toolName = formattedTool[Tools.function].name;
+    toolName = toolkits.some((toolkit) => toolName.startsWith(toolkit.pluginKey))
+      ? toolName.split('_')[0]
+      : toolName;
+    if (filter.has(toolName) && included.size === 0) {
+      continue;
+    }
+
+    if (included.size > 0 && !included.has(toolName)) {
+      continue;
+    }
     tools.push(formattedTool);
   }
 
@@ -169,12 +185,32 @@ async function processRequiredActions(client, requiredActions) {
     `[required actions] user: ${client.req.user.id} | thread_id: ${requiredActions[0].thread_id} | run_id: ${requiredActions[0].run_id}`,
     requiredActions,
   );
-  const tools = requiredActions.map((action) => action.tool);
-  const loadedTools = await loadTools({
+  const toolDefinitions = client.req.app.locals.availableTools;
+  const seenToolkits = new Set();
+  const tools = requiredActions
+    .map((action) => {
+      const toolName = action.tool;
+      const toolDef = toolDefinitions[toolName];
+      if (toolDef && !manifestToolMap[toolName]) {
+        for (const toolkit of toolkits) {
+          if (seenToolkits.has(toolkit.pluginKey)) {
+            return;
+          } else if (toolName.startsWith(`${toolkit.pluginKey}_`)) {
+            seenToolkits.add(toolkit.pluginKey);
+            return toolkit.pluginKey;
+          }
+        }
+      }
+      return toolName;
+    })
+    .filter((toolName) => !!toolName);
+
+  const { loadedTools } = await loadTools({
     user: client.req.user.id,
     model: client.req.body.model ?? 'gpt-4o-mini',
     tools,
     functions: true,
+    endpoint: client.req.body.endpoint,
     options: {
       processFileURL,
       req: client.req,
@@ -183,7 +219,6 @@ async function processRequiredActions(client, requiredActions) {
       fileStrategy: client.req.app.locals.fileStrategy,
       returnMetadata: true,
     },
-    skipSpecs: true,
   });
 
   const ToolMap = loadedTools.reduce((map, tool) => {
@@ -328,6 +363,12 @@ async function processRequiredActions(client, requiredActions) {
       }
 
       tool = await createActionTool({ action: actionSet, requestBuilder });
+      if (!tool) {
+        logger.warn(
+          `Invalid action: user: ${client.req.user.id} | thread_id: ${requiredActions[0].thread_id} | run_id: ${requiredActions[0].run_id} | toolName: ${currentAction.tool}`,
+        );
+        throw new Error(`{"type":"${ErrorTypes.INVALID_ACTION}"}`);
+      }
       isActionTool = !!tool;
       ActionToolMap[currentAction.tool] = tool;
     }
@@ -368,31 +409,54 @@ async function processRequiredActions(client, requiredActions) {
  * Processes the runtime tool calls and returns the tool classes.
  * @param {Object} params - Run params containing user and request information.
  * @param {ServerRequest} params.req - The request object.
- * @param {string} params.agent_id - The agent ID.
- * @param {Agent['tools']} params.tools - The agent's available tools.
- * @param {Agent['tool_resources']} params.tool_resources - The agent's available tool resources.
+ * @param {Agent} params.agent - The agent to load tools for.
  * @param {string | undefined} [params.openAIApiKey] - The OpenAI API key.
  * @returns {Promise<{ tools?: StructuredTool[] }>} The agent tools.
  */
-async function loadAgentTools({ req, agent_id, tools, tool_resources, openAIApiKey }) {
-  if (!tools || tools.length === 0) {
+async function loadAgentTools({ req, agent, tool_resources, openAIApiKey }) {
+  if (!agent.tools || agent.tools.length === 0) {
     return {};
   }
-  const loadedTools = await loadTools({
-    user: req.user.id,
-    // model: req.body.model ?? 'gpt-4o-mini',
-    tools,
+
+  const endpointsConfig = await getEndpointsConfig(req);
+  const capabilities = endpointsConfig?.[EModelEndpoint.agents]?.capabilities ?? [];
+  const areToolsEnabled = capabilities.includes(AgentCapabilities.tools);
+  if (!areToolsEnabled) {
+    logger.debug('Tools are not enabled for this agent.');
+    return {};
+  }
+
+  const isFileSearchEnabled = capabilities.includes(AgentCapabilities.file_search);
+  const isCodeEnabled = capabilities.includes(AgentCapabilities.execute_code);
+  const areActionsEnabled = capabilities.includes(AgentCapabilities.actions);
+
+  const _agentTools = agent.tools?.filter((tool) => {
+    if (tool === Tools.file_search && !isFileSearchEnabled) {
+      return false;
+    } else if (tool === Tools.execute_code && !isCodeEnabled) {
+      return false;
+    }
+    return true;
+  });
+
+  if (!_agentTools || _agentTools.length === 0) {
+    return {};
+  }
+
+  const { loadedTools, toolContextMap } = await loadTools({
+    agent,
     functions: true,
+    user: req.user.id,
+    tools: _agentTools,
     options: {
       req,
       openAIApiKey,
       tool_resources,
-      returnMetadata: true,
       processFileURL,
       uploadImageBuffer,
+      returnMetadata: true,
       fileStrategy: req.app.locals.fileStrategy,
     },
-    skipSpecs: true,
   });
 
   const agentTools = [];
@@ -403,16 +467,29 @@ async function loadAgentTools({ req, agent_id, tools, tool_resources, openAIApiK
       continue;
     }
 
-    const toolInstance = toolFn(
-      async (...args) => {
-        return tool['_call'](...args);
-      },
-      {
-        name: tool.name,
-        description: tool.description,
-        schema: tool.schema,
-      },
-    );
+    if (tool.mcp === true) {
+      agentTools.push(tool);
+      continue;
+    }
+
+    if (tool instanceof DynamicStructuredTool) {
+      agentTools.push(tool);
+      continue;
+    }
+
+    const toolDefinition = {
+      name: tool.name,
+      schema: tool.schema,
+      description: tool.description,
+    };
+
+    if (imageGenTools.has(tool.name)) {
+      toolDefinition.responseFormat = 'content_and_artifact';
+    }
+
+    const toolInstance = toolFn(async (...args) => {
+      return tool['_call'](...args);
+    }, toolDefinition);
 
     agentTools.push(toolInstance);
   }
@@ -422,60 +499,79 @@ async function loadAgentTools({ req, agent_id, tools, tool_resources, openAIApiK
     return map;
   }, {});
 
+  if (!areActionsEnabled) {
+    return {
+      tools: agentTools,
+      toolContextMap,
+    };
+  }
+
   let actionSets = [];
   const ActionToolMap = {};
 
-  for (const toolName of tools) {
-    if (!ToolMap[toolName]) {
-      if (!actionSets.length) {
-        actionSets = (await loadActionSets({ agent_id })) ?? [];
-      }
+  for (const toolName of _agentTools) {
+    if (ToolMap[toolName]) {
+      continue;
+    }
 
-      let actionSet = null;
-      let currentDomain = '';
-      for (let action of actionSets) {
-        const domain = await domainParser(req, action.metadata.domain, true);
-        if (toolName.includes(domain)) {
-          currentDomain = domain;
-          actionSet = action;
-          break;
-        }
-      }
+    if (!actionSets.length) {
+      actionSets = (await loadActionSets({ agent_id: agent.id })) ?? [];
+    }
 
-      if (actionSet) {
-        const validationResult = validateAndParseOpenAPISpec(actionSet.metadata.raw_spec);
-        if (validationResult.spec) {
-          const { requestBuilders, functionSignatures, zodSchemas } = openapiToFunction(
-            validationResult.spec,
-            true,
+    let actionSet = null;
+    let currentDomain = '';
+    for (let action of actionSets) {
+      const domain = await domainParser(req, action.metadata.domain, true);
+      if (toolName.includes(domain)) {
+        currentDomain = domain;
+        actionSet = action;
+        break;
+      }
+    }
+
+    if (!actionSet) {
+      continue;
+    }
+
+    const validationResult = validateAndParseOpenAPISpec(actionSet.metadata.raw_spec);
+    if (validationResult.spec) {
+      const { requestBuilders, functionSignatures, zodSchemas } = openapiToFunction(
+        validationResult.spec,
+        true,
+      );
+      const functionName = toolName.replace(`${actionDelimiter}${currentDomain}`, '');
+      const functionSig = functionSignatures.find((sig) => sig.name === functionName);
+      const requestBuilder = requestBuilders[functionName];
+      const zodSchema = zodSchemas[functionName];
+
+      if (requestBuilder) {
+        const tool = await createActionTool({
+          action: actionSet,
+          requestBuilder,
+          zodSchema,
+          name: toolName,
+          description: functionSig.description,
+        });
+        if (!tool) {
+          logger.warn(
+            `Invalid action: user: ${req.user.id} | agent_id: ${agent.id} | toolName: ${toolName}`,
           );
-          const functionName = toolName.replace(`${actionDelimiter}${currentDomain}`, '');
-          const functionSig = functionSignatures.find((sig) => sig.name === functionName);
-          const requestBuilder = requestBuilders[functionName];
-          const zodSchema = zodSchemas[functionName];
-
-          if (requestBuilder) {
-            const tool = await createActionTool({
-              action: actionSet,
-              requestBuilder,
-              zodSchema,
-              name: toolName,
-              description: functionSig.description,
-            });
-            agentTools.push(tool);
-            ActionToolMap[toolName] = tool;
-          }
+          throw new Error(`{"type":"${ErrorTypes.INVALID_ACTION}"}`);
         }
+        agentTools.push(tool);
+        ActionToolMap[toolName] = tool;
       }
     }
   }
 
-  if (tools.length > 0 && agentTools.length === 0) {
-    throw new Error('No tools found for the specified tool calls.');
+  if (_agentTools.length > 0 && agentTools.length === 0) {
+    logger.warn(`No tools found for the specified tool calls: ${_agentTools.join(', ')}`);
+    return {};
   }
 
   return {
     tools: agentTools,
+    toolContextMap,
   };
 }
 

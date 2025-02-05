@@ -45,6 +45,7 @@ export const fullMimeTypesList = [
   'text/x-tex',
   'text/plain',
   'text/css',
+  'text/vtt',
   'image/jpeg',
   'text/javascript',
   'image/gif',
@@ -53,6 +54,8 @@ export const fullMimeTypesList = [
   'application/typescript',
   'application/xml',
   'application/zip',
+  'image/svg',
+  'image/svg+xml',
   ...excelFileTypes,
 ];
 
@@ -109,7 +112,7 @@ export const excelMimeTypes =
   /^application\/(vnd\.ms-excel|msexcel|x-msexcel|x-ms-excel|x-excel|x-dos_ms_excel|xls|x-xls|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet)$/;
 
 export const textMimeTypes =
-  /^(text\/(x-c|x-csharp|x-c\+\+|x-java|html|markdown|x-php|x-python|x-script\.python|x-ruby|x-tex|plain|css|javascript|csv))$/;
+  /^(text\/(x-c|x-csharp|x-c\+\+|x-java|html|markdown|x-php|x-python|x-script\.python|x-ruby|x-tex|plain|css|vtt|javascript|csv))$/;
 
 export const applicationMimeTypes =
   /^(application\/(epub\+zip|csv|json|pdf|x-tar|typescript|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|presentationml\.presentation|spreadsheetml\.sheet)|xml|zip))$/;
@@ -121,6 +124,8 @@ export const supportedMimeTypes = [
   excelMimeTypes,
   applicationMimeTypes,
   imageMimeTypes,
+  /** Supported by LC Code Interpreter PAI */
+  /^image\/(svg|svg\+xml)$/,
 ];
 
 export const codeInterpreterMimeTypes = [
@@ -147,7 +152,7 @@ export const codeTypeMapping: { [key: string]: string } = {
 };
 
 export const retrievalMimeTypes = [
-  /^(text\/(x-c|x-c\+\+|html|x-java|markdown|x-php|x-python|x-script\.python|x-ruby|x-tex|plain|xml))$/,
+  /^(text\/(x-c|x-c\+\+|html|x-java|markdown|x-php|x-python|x-script\.python|x-ruby|x-tex|plain|vtt|xml))$/,
   /^(application\/(json|pdf|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|presentationml\.presentation)))$/,
 ];
 
