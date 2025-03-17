@@ -78,6 +78,7 @@ function AccountSettings() {
         {startupConfig?.checkBalance === true &&
           balanceQuery.data != null &&
           !isNaN(parseFloat(balanceQuery.data)) && (
+          <>
             <Select.SelectItem
                 value=""
                 onClick={() => window.open('https://ipg-ai.bitrix24site.ru/gpt/?mail='+user?.email, '_blank')}
@@ -87,6 +88,7 @@ function AccountSettings() {
                 {localize('com_nav_balance')}: {parseFloat(balanceQuery.data).toFixed(2)}
               </Select.SelectItem>
             <DropdownMenuSeparator />
+          </>
         )}
         <Select.SelectItem
           value=""
